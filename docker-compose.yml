@@ -1,0 +1,84 @@
+version: '3.2'
+services:
+  nginx:
+    image: nginx:latest
+    container_name: ng01
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./tE-backend:/var/www/html/tE-backend
+      - ./translationExchange:/var/www/html/tE-backend/tRecorderApi/frontend
+      - ./config/nginx:/etc/nginx/conf.d
+      - ./config:/etc/ssl
+      - ./config:/etc/nginx/snippets
+      - ./config:/etc/nginx/snippets
+      - /static:/static
+    depends_on:
+      - web
+
+  web:
+    build: .
+    container_name: dg01
+    command: bash -c "python manage.py makemigrations api && python manage.py migrate && python manage.py collectstatic --noinput && gunicorn -c /config/config.py tRecorderApi.wsgi"
+    volumes:
+      - ./tE-backend:/var/www/html/tE-backend
+      - ./translationExchange:/var/www/html/tE-backend/tRecorderApi/frontend
+      - /static:/static
+    depends_on:
+      - db
+      - sentry
+    expose:
+      - "8000"
+  db:
+    image: postgres:latest
+    container_name: ps01
+    volumes:
+      - ./config/postgres:/docker-entrypoint-initdb.d
+    environment:
+      - POSTGRES_MULTIPLE_DATABASES="sentry"
+
+  redis:
+    image: redis:latest
+
+  sentry:
+      image: sentry:latest
+      volumes:
+      - "./config/sentry/sentry.conf.py:/home/sentry/.sentry/sentry.conf.py"
+      ports:
+      - 9000:9000
+      stdin_open: true
+      tty: true
+      command: bash -c "sentry upgrade && sentry start"
+      environment:
+        SENTRY_SECRET_KEY: n9ym0jlvqr8n_ygpc7kxz@2joayj-d0(n!pxp*b##udbu$xiw2
+        SENTRY_DB_NAME: sentry
+        SENTRY_POSTGRES_HOST: db
+        SENTRY_REDIS_HOST: redis
+      depends_on:
+        - db
+        - redis
+
+  sentry_cron:
+    image: 'sentry:latest'
+    depends_on:
+      - redis
+      - db
+    command: "sentry run cron"
+    environment:
+      SENTRY_SECRET_KEY: n9ym0jlvqr8n_ygpc7kxz@2joayj-d0(n!pxp*b##udbu$xiw2
+      SENTRY_POSTGRES_HOST: db
+      SENTRY_DB_NAME: 'sentry'
+      SENTRY_REDIS_HOST: 'redis'
+
+  sentry_worker:
+    image: 'sentry:latest'
+    depends_on:
+      - redis
+      - db
+    command: "sentry run worker"
+    environment:
+      SENTRY_SECRET_KEY: n9ym0jlvqr8n_ygpc7kxz@2joayj-d0(n!pxp*b##udbu$xiw2
+      SENTRY_POSTGRES_HOST: db
+      SENTRY_DB_NAME: 'sentry'
+      SENTRY_REDIS_HOST: 'redis'
