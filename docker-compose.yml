@@ -1,7 +1,7 @@
 version: '3.2'
 services:
   nginx:
-    image: nginx:latest
+    image: nginx:alpine
     container_name: ng01
     ports:
       - "80:80"
@@ -31,7 +31,7 @@ services:
     expose:
       - "8000"
   db:
-    image: postgres:latest
+    image: postgres:alpine
     container_name: ps01
     volumes:
       - ./config/postgres:/docker-entrypoint-initdb.d
@@ -39,7 +39,7 @@ services:
       - POSTGRES_MULTIPLE_DATABASES="sentry"
 
   redis:
-    image: redis:latest
+    image: redis:alpine
 
   sentry:
       image: sentry:latest
