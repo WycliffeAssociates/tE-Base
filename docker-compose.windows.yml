@@ -37,7 +37,7 @@ services:
     restart: always
     volumes:
       - ./config/postgres:/docker-entrypoint-initdb.d
-      - ./postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     environment:
       - POSTGRES_MULTIPLE_DATABASES="sentry"
 
@@ -89,3 +89,7 @@ services:
       SENTRY_POSTGRES_HOST: db
       SENTRY_DB_NAME: 'sentry'
       SENTRY_REDIS_HOST: 'redis'
+
+volumes:
+  postgres_data:
+    external: true
