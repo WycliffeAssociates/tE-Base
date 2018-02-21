@@ -5,6 +5,12 @@ django==1.11
 django_rest_framework
 django-cors-headers
 coreapi
+urllib3
 whitenoise
 psycopg2
 raven
+celery
+redis
+django-celery-results
+flower
+drf-yasg

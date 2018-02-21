@@ -21,11 +21,12 @@ services:
   web:
     build: .
     container_name: dg01
-    command: bash -c "python manage.py makemigrations api && python manage.py migrate && python manage.py collectstatic --noinput && gunicorn -c /config/config.py tRecorderApi.wsgi"
+    command: bash -c "/scripts/wait-for-it.sh -h db -p 5432 -- python manage.py makemigrations api && python manage.py migrate && python manage.py collectstatic --noinput && gunicorn -c /config/config.py tRecorderApi.wsgi"
     volumes:
       - ./tE-backend:/var/www/html/tE-backend
       - ./translationExchange:/var/www/html/tE-backend/tRecorderApi/frontend
       - ./static:/static
+      - ./scripts:/scripts
     depends_on:
       - db
       - sentry
@@ -37,7 +38,7 @@ services:
     restart: always
     volumes:
       - ./config/postgres:/docker-entrypoint-initdb.d
-      - ./postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     environment:
       - POSTGRES_MULTIPLE_DATABASES="sentry"
 
@@ -46,15 +47,16 @@ services:
     image: redis
 
   sentry:
-      image: trtedev/sentry
+      image: sentry
       restart: always
       volumes:
-      - "./config/sentry/sentry.conf.py:/home/sentry/.sentry/sentry.conf.py"
+      - "./config/sentry/:/home/sentry/.sentry/"
+      - ./scripts:/scripts
       ports:
       - 9000:9000
       stdin_open: true
       tty: true
-      command: bash -c "sentry upgrade --noinput && sentry run web"
+      command: bash -c "/scripts/wait-for-it.sh -h db -p 5432 -- sentry upgrade --noinput && sentry run web"
       environment:
         SENTRY_SECRET_KEY: n9ym0jlvqr8n_ygpc7kxz@2joayj-d0(n!pxp*b##udbu$xiw2
         SENTRY_DB_NAME: sentry
@@ -65,7 +67,7 @@ services:
         - redis
 
   sentry_cron:
-    image: 'trtedev/sentry'
+    image: 'sentry'
     restart: always
     depends_on:
       - redis
@@ -78,7 +80,7 @@ services:
       SENTRY_REDIS_HOST: 'redis'
 
   sentry_worker:
-    image: 'trtedev/sentry'
+    image: 'sentry'
     restart: always
     depends_on:
       - redis
@@ -89,3 +91,44 @@ services:
       SENTRY_POSTGRES_HOST: db
       SENTRY_DB_NAME: 'sentry'
       SENTRY_REDIS_HOST: 'redis'
+
+  rabbit:
+    image: rabbitmq:latest
+    restart: always
+    environment:
+      - RABBITMQ_DEFAULT_USER=te
+      - RABBITMQ_DEFAULT_PASS=te
+    ports:
+      - "5672:5672"  # we forward this port because it's useful for debugging
+      - "15672:15672"  # here, we can access rabbitmq management plugin
+  
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    environment: 
+      - C_FORCE_ROOT=true
+    volumes:
+      - ./tE-backend:/var/www/html/tE-backend/
+      - ./scripts:/scripts
+    command: bash -c "/scripts/wait-for-it.sh -h web -p 8000 -- celery -A tRecorderApi worker -l info"
+    depends_on:
+      - rabbit
+      - redis
+
+  flower:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./tE-backend:/var/www/html/tE-backend/
+    command: bash -c "celery flower -A tRecorderApi --port=5555"
+    ports:
+      - "5555:5555"
+    depends_on:
+      - rabbit
+
+volumes:
+  postgres_data:
+    external: true
