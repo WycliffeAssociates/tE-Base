@@ -11,6 +11,6 @@ psycopg2
 raven
 celery
 redis
-django-celery-results
 flower
 drf-yasg
+rest-social-auth

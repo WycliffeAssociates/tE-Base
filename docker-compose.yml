@@ -45,6 +45,8 @@ services:
   redis:
     restart: always
     image: redis
+    expose: 
+      - "6379"
 
   sentry:
       image: sentry
@@ -91,16 +93,6 @@ services:
       SENTRY_POSTGRES_HOST: db
       SENTRY_DB_NAME: 'sentry'
       SENTRY_REDIS_HOST: 'redis'
-
-  rabbit:
-    image: rabbitmq:latest
-    restart: always
-    environment:
-      - RABBITMQ_DEFAULT_USER=te
-      - RABBITMQ_DEFAULT_PASS=te
-    ports:
-      - "5672:5672"  # we forward this port because it's useful for debugging
-      - "15672:15672"  # here, we can access rabbitmq management plugin
   
   celery_worker:
     build:
@@ -114,7 +106,6 @@ services:
       - ./scripts:/scripts
     command: bash -c "/scripts/wait-for-it.sh -h web -p 8000 -- celery -A tRecorderApi worker -l info"
     depends_on:
-      - rabbit
       - redis
 
   flower:
@@ -127,7 +118,7 @@ services:
     ports:
       - "5555:5555"
     depends_on:
-      - rabbit
+      - redis
 
 volumes:
   postgres_data:
