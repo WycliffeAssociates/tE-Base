@@ -14,3 +14,6 @@ redis
 django-celery-results
 flower
 drf-yasg
+django-allauth
+django-rest-auth[with_social]
+rest-social-auth
