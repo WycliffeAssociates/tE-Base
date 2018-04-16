@@ -57,7 +57,6 @@ services:
       ports:
       - 9000:9000
       stdin_open: true
-      tty: true
       command: bash -c "/scripts/wait-for-it.sh -h db -p 5432 -- sentry upgrade --noinput && sentry run web"
       environment:
         SENTRY_SECRET_KEY: n9ym0jlvqr8n_ygpc7kxz@2joayj-d0(n!pxp*b##udbu$xiw2
