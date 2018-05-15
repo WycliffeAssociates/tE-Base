@@ -133,7 +133,7 @@ services:
       - "5555:5555"
     depends_on:
       - redis
-      
+
   ap:
     build: './ap'
     container_name: ap01
