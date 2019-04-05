@@ -18,8 +18,6 @@ COPY --from=builder /tE-backend /var/www/html/tE-backend
 COPY --from=builder /translationExchange /var/www/html/tE-backend/tRecorderApi/frontend
 WORKDIR /var/www/html/tE-backend/scripts
 RUN python3 ./download_chunks.py && \
-    python3 ./get_obs.py && \
-    python3 ./get_tq.py && \
     mv /var/www/html/tE-backend/scripts/chunks/ /var/www/html/tE-backend/tRecorderApi/static/ && \
     pip install -r /requirements.txt
 VOLUME [ "/var/www/html/tE-backend/tRecorderApi/media" ]
