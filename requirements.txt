@@ -2,7 +2,7 @@ gunicorn~=19.7
 pydub
 gevent
 django~=1.11
-django_rest_framework
+djangorestframework~=3.10
 django-cors-headers
 coreapi
 urllib3
