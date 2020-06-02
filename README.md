@@ -1,2 +1,2 @@
 # tE-Base
-Docker and configuration files for the translationExchange environment
+moved to https://github.com/Bible-Translation-Tools/BTT-Exchanger
